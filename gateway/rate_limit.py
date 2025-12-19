@@ -15,7 +15,7 @@ class RateLimiter:
     """
     def __init__(self, redis: Redis):
         self.redis = redis
-        self.sha: str|None = None
+        self.sha: str | None = None
 
     async def load(self) -> None:
         """
@@ -40,7 +40,7 @@ class RateLimiter:
         now_ms = int(time.time() * 1000)
         try:
             result = await self.redis.evalsha(self.sha,
-                                              0, # num Redis keys passed in explicitly
+                                              1, # single node
                                           key,
                                           capacity,
                                           rate,
@@ -49,7 +49,7 @@ class RateLimiter:
         except redis.exceptions.NoScriptError:
             await self.load()
             result = await self.redis.evalsha(self.sha,
-                                              0,  # num Redis keys passed in explicitly
+                                              1,  # single node
                                               key,
                                               capacity,
                                               rate,

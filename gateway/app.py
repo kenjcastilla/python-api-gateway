@@ -15,9 +15,11 @@ async def lifespan(app: FastAPI):
     limiter = RateLimiter(redis)
     await limiter.load()
 
+    http_client = httpx.AsyncClient(timeout=20.0)
+
     app.state.redis = redis
     app.state.limiter = limiter
-    app.state.http_client = httpx.AsyncClient(timeout=20.0)
+    app.state.http_client = http_client
 
     try:
         yield
@@ -26,9 +28,9 @@ async def lifespan(app: FastAPI):
         await app.state.http_client.aclose()
         await app.state.redis.close()
 
-app = FastAPI(lifespan=lifespan)
+application = FastAPI(lifespan=lifespan)
 
-@app.api_route(
+@application.api_route(
     "/{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
 )
@@ -39,18 +41,21 @@ async def proxy(path: str, request: Request):
 
     url = upstream.rstrip("/") + suffix
 
-    headers = dict(request.headers)
-    for h in (
-        'connection',
-        'keep-alive',
-        'proxy-authentication',
-        'proxy-authorization',
-        'te',
-        'trailers',
-        'transfer-encoding',
-        'upgrade',
-        'host',
-    ): headers.pop(h, None)
+    raw_headers = request.headers.raw   # raw headers from client
+    hop_by_hop_headers = {
+            b'connection',
+            b'keep-alive',
+            b'proxy-authentication',
+            b'proxy-authorization',
+            b'te',
+            b'trailers',
+            b'transfer-encoding',
+            b'upgrade',
+            b'host',
+        }
+    headers = [
+        (k, v) for k, v in raw_headers if k.lower() not in hop_by_hop_headers
+    ] # headers excluding hop_by_hop headers
 
     body = await request.body()
 
@@ -84,5 +89,3 @@ async def proxy(path: str, request: Request):
         status_code=resp.status_code,
         headers=filtered_headers
     )
-
-
