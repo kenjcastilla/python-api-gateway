@@ -8,7 +8,7 @@ local now = tonumber(ARGV[3])	--[[
 	Currently using application clock (Python's "time" module). This will work well as
 		long as we don't have an issue with clock synchronization between multiple
 		application instances.
-	If application sync were a bigger issue, I could use Redis time instead. This would
+	If application sync were a bigger issue, I would likely use Redis time instead. This would
 		result in greatly reduced clock skew but increased Redis CPU usage, as a new
 		Redis command would be required on each occasion.
 	]]

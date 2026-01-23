@@ -5,33 +5,38 @@ from redis.asyncio import Redis
 from .rate_limit import RateLimiter
 from .routing import find_upstream
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown logic."""
     #---- Startup ----
-    redis = Redis.from_url("redis://localhost:6379")
-    await redis.ping()
+    if not hasattr(app.state, 'limiter'):
+        redis = Redis.from_url("redis://127.0.0.1:6379")
+        print('Redis ping successful:', await redis.ping())
 
-    limiter = RateLimiter(redis)
-    await limiter.load()
+        limiter = RateLimiter(redis)
+        await limiter.load()
 
-    http_client = httpx.AsyncClient(timeout=20.0)
+        app.state.redis = redis
+        app.state.limiter = limiter
 
-    app.state.redis = redis
-    app.state.limiter = limiter
-    app.state.http_client = http_client
+    if not hasattr(app.state, 'http_client'):
+        app.state.http_client = httpx.AsyncClient(timeout=20.0)
 
     try:
         yield
     finally:
         #---- Shutdown ----
-        await app.state.http_client.aclose()
-        await app.state.redis.close()
+        if hasattr(app.state, 'http_client'):
+            await app.state.http_client.aclose()
+        if hasattr(app.state, 'redis'):
+            await app.state.redis.aclose()
 
 application = FastAPI(lifespan=lifespan)
 
+
 @application.api_route(
-    "/{path:path}",
+    path="/{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
 )
 async def proxy(path: str, request: Request):
@@ -40,7 +45,6 @@ async def proxy(path: str, request: Request):
         raise HTTPException(status_code=404, detail="No upstream route found")
 
     url = upstream.rstrip("/") + suffix
-
     raw_headers = request.headers.raw   # raw headers from client
     hop_by_hop_headers = {
             b'connection',
@@ -89,3 +93,4 @@ async def proxy(path: str, request: Request):
         status_code=resp.status_code,
         headers=filtered_headers
     )
+

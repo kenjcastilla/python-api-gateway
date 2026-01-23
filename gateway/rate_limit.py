@@ -3,7 +3,7 @@ from pathlib import Path
 import redis.exceptions
 from redis.asyncio import Redis
 
-LUA_SCRIPT = Path(__file__).parent / 'redis/token/bucket.lua'
+LUA_SCRIPT = Path(__file__).parent / 'redis/token_bucket.lua'
 LUA = LUA_SCRIPT.read_text()
 
 class RateLimiter:
