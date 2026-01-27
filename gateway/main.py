@@ -93,4 +93,3 @@ async def proxy(path: str, request: Request):
         status_code=resp.status_code,
         headers=filtered_headers
     )
-

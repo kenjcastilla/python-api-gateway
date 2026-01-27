@@ -2,7 +2,6 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.asyncio
 async def test_debug_routing():
     """Debug test to check if routes are configured"""
     from gateway.config import settings
