@@ -36,12 +36,14 @@ def upstream_app() -> FastAPI:
 @pytest.fixture
 async def gateway_client(upstream_app: FastAPI):
     """Gateway test client with upstream mocked via ASGITransport"""
+
     # transport from gateway to fake upstream
     upstream_transport = ASGITransport(app=upstream_app)
     upstream_client = AsyncClient(
         transport=upstream_transport,
         base_url="http://upstream"
     )
+    # Need lifespan management to handle async testing
     async with LifespanManager(gateway_app) as manager:
         # Change state variables associated with real gateway app to tests variables
         gateway_app.state.limiter = FakeRateLimiter()
