@@ -13,8 +13,8 @@ class RateLimiter:
     Utilizes Lua script to implement atomic check-and-decrement semantics across
     concurrent gateway instances.
     """
-    def __init__(self, redis: Redis):
-        self.redis = redis
+    def __init__(self, redis_client: Redis):
+        self.redis = redis_client
         self.sha: str | None = None
 
     async def load(self) -> None:

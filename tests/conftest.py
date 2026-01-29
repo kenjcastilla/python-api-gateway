@@ -3,10 +3,13 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, Request
 from httpx import AsyncClient, ASGITransport
+from redis.asyncio import Redis
 
+from gateway.rate_limit import RateLimiter
 from gateway.testing.fake_limiter import FakeRateLimiter
 from gateway.config import settings, RouteRule
 from gateway.main import application as gateway_app
+
 
 #----Routes overrides for tests----
 @pytest.fixture(scope='session', autouse=True)
@@ -15,6 +18,33 @@ def set_routes():
         RouteRule(prefix='/hello', upstream='http://upstream'),
         RouteRule(prefix='/echo', upstream='http://upstream'),
     ]
+
+
+@pytest.fixture
+async def redis_client():
+    """Real Redis client for integration testing"""
+    redis = Redis.from_url('redis://localhost:6379', decode_responses=True)
+
+    # Verify Redis is running
+    try:
+        await redis.ping()
+    except Exception as e:
+        pytest.skip('Redis not available', e)
+
+    yield redis
+
+    # Cleanup
+    await redis.flushdb()
+    await redis.aclose()
+
+
+@pytest.fixture
+async def rate_limiter(redis_client):
+    """Real rate limiter for integration testing"""
+    limiter = RateLimiter(redis_client)
+    await limiter.load()
+
+    yield limiter
 
 
 @pytest.fixture
