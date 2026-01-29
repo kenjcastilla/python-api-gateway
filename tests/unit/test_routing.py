@@ -20,6 +20,7 @@ def test_find_upstream_prefix_match():
     assert upstream == 'http://b'
     assert suffix == '/users'
 
+
 def test_find_upstream_not_found():
     upstream, suffix = find_upstream('/unknown')
     assert upstream is None

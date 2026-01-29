@@ -1,5 +1,3 @@
-import pytest
-
 async def test_rate_limit_blocks_request(gateway_client):
     gateway_app_from_client = gateway_client._transport.app
 

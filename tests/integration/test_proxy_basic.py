@@ -1,6 +1,3 @@
-from typing import AnyStr
-
-import pytest
 from httpx import AsyncClient
 
 

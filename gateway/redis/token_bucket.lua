@@ -14,13 +14,13 @@ local now = tonumber(ARGV[3])	--[[
 	]]
 local requested = tonumber(ARGV[4])
 
-local state = redis.call('HMGET', key, 'tokens', 'last_ts')
+local state = redis.call('HMGET', bucket_key, 'tokens', 'last_ts')
 local tokens = tonumber(state[1])
 local last_timestamp = tonumber(state[2])
 
 if tokens == nil then
 	tokens = capacity
-	last = now
+	last_timestamp = now
 end
 
 local elapsed = math.max(0, (now - last_timestamp) / 1000.0)
