@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, HTTPException
 import httpx
 from redis.asyncio import Redis
+
+from .middleware import RateLimitMiddleware
 from .rate_limit import RateLimiter
 from .routing import find_upstream
 
@@ -12,7 +14,7 @@ async def lifespan(app: FastAPI):
     #---- Startup ----
     if not hasattr(app.state, 'limiter'):
         redis = Redis.from_url("redis://localhost:6379")
-        print('Redis ping success:', await redis.ping())
+        print("Redis ping success:", await redis.ping())
 
         limiter = RateLimiter(redis)
         await limiter.load()
@@ -34,6 +36,7 @@ async def lifespan(app: FastAPI):
 
 application = FastAPI(lifespan=lifespan)
 
+application.add_middleware(RateLimitMiddleware, capacity=50, rate=1.0)
 
 @application.api_route(
     path="/{path:path}",
@@ -83,12 +86,12 @@ async def proxy(path: str, request: Request):
     body = await request.body()
 
     # ---- Rate Limiting ----
-    api_key = request.headers.get("x-api-key") or request.client.host
-    key = f"rl:{api_key}:global"
-
-    allowed, _ = await request.app.state.limiter.allow(key, capacity=50, rate=1.0)
-    if not allowed:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    # api_key = request.headers.get('x-api-key') or request.client.host
+    # key = f"rl:{api_key}:global"
+    #
+    # allowed, _ = await request.app.state.limiter.allow(key, capacity=50, rate=1.0)
+    # if not allowed:
+    #     raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
     # ---- Proxy Request ----
     try:
@@ -109,7 +112,7 @@ async def proxy(path: str, request: Request):
 
     filtered_headers = {
         k: v for k, v in resp.headers.items()
-        if k.lower() not in { "content-encoding", "transfer-encoding", "connection" }
+        if k.lower() not in {'content-encoding', 'transfer-encoding', 'connection'}
     }
 
     #Debugging
