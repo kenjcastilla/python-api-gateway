@@ -12,7 +12,7 @@ async def lifespan(app: FastAPI):
     #---- Startup ----
     if not hasattr(app.state, 'limiter'):
         redis = Redis.from_url("redis://localhost:6379")
-        print('Redis ping successful:', await redis.ping())
+        print('Redis ping success:', await redis.ping())
 
         limiter = RateLimiter(redis)
         await limiter.load()
@@ -46,6 +46,12 @@ async def proxy(path: str, request: Request):
 
     url = upstream.rstrip("/") + suffix
     raw_headers = request.headers.raw   # raw headers from client
+
+    # Debugging
+    # print('\n\nMAIN---all headers (raw) from initial request:')
+    # for k, v in raw_headers:
+    #     print(f"\t{k}  =  {v}")
+
     hop_by_hop_headers = {
             b'connection',
             b'keep-alive',
@@ -55,11 +61,24 @@ async def proxy(path: str, request: Request):
             b'trailers',
             b'transfer-encoding',
             b'upgrade',
-            b'host',
         }
-    headers = [
-        (k, v) for k, v in raw_headers if k.lower() not in hop_by_hop_headers
-    ] # headers excluding hop_by_hop headers
+
+    # decoded headers from raw_headers excluding hop_by_hop headers
+    headers = dict()
+    for k, v in raw_headers:
+        if k == b'host':
+            # Preserve original host in new 'X-Forwarded-Host' header
+            headers['X-Forwarded-Host'] = v.decode('latin-1')
+        elif k not in hop_by_hop_headers:
+            headers[k.decode('latin-1')] = v.decode('latin-1')
+
+    headers['X-Forwarded-Proto'] = request.url.scheme
+    headers['X-Real-IP'] = request.client.host
+
+    # Debugging
+    # print('\nMAIN---headers after removing hopybyhops:')
+    # for k, v in headers.items():
+    #     print(f"\t{k}  =  {v}")
 
     body = await request.body()
 
@@ -83,10 +102,20 @@ async def proxy(path: str, request: Request):
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
+    # Debugging
+    # print('\nMAIN---response headers after state client proxy request:')
+    # for k, v in resp.headers.items():
+    #     print(f"\t{k}  =  {v}")
+
     filtered_headers = {
         k: v for k, v in resp.headers.items()
         if k.lower() not in { "content-encoding", "transfer-encoding", "connection" }
     }
+
+    #Debugging
+    # print('\nMAIN---proxy request headers after filtering:')
+    # for k, v in filtered_headers.items():
+    #     print(f"\t{k}  =  {v}")
 
     return Response(
         content=resp.content,

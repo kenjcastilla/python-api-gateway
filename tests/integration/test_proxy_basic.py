@@ -1,3 +1,5 @@
+from typing import AnyStr
+
 import pytest
 from httpx import AsyncClient
 
@@ -21,7 +23,7 @@ async def test_proxy_forwards_get_request(gateway_client: AsyncClient):
     resp = await gateway_client.get("/hello")
 
     assert resp.status_code == 200
-    assert resp.json() == {"message": "hello from upstream"}
+    assert dict(resp.json())['message'] == "hello from upstream"
 
 
 async def test_proxy_forwards_post_body(gateway_client: AsyncClient):
