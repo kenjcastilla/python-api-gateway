@@ -1,22 +1,44 @@
 from fastapi import Request, HTTPException
-from .rate_limit import RateLimiter
+from starlette.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
-class RateLimitMiddleware:
-    def __init__(self, app, limiter: RateLimiter):
-        self.app = app
-        self.limiter = limiter
 
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    ASGI middleware for rate limiting all incoming requests.
+    Implements token-bucket algorithm with Redis backend.
+    """
+    def __init__(self, app, capacity: int = 50, rate: float = 1.0):
+        super().__init__(app)
+        self.capacity = capacity
+        self.rate = rate
 
-        request = Request(scope, receive=receive)
-        api_key = request.headers.get("x-api-key") or scope.get("client")[0]
+    async def dispatch(self, request: Request, call_next):
+        """Process each request through rate limiter"""
+
+        # Get limiter from app state (set in lifespan)
+        limiter = request.app.state.limiter
+
+        # Extract API key (or client IP)
+        api_key = request.headers.get('x-api-key') or request.client.host
         key = f"rl:{api_key}:global"
 
-        allowed, _ = await self.limiter.allow(key, capacity=50, rate=1.0)
-        if not allowed:
-            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+        # Check rate limit
+        allowed, remaining_tokens = await limiter.allow(
+            key,
+            capacity=self.capacity,
+            rate=self.rate,
+        )
 
-        await self.app(scope, receive, send)
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded"},
+                headers={"X-RateLimit-Remaining": str(int(remaining_tokens))},
+            )
+
+        # Add rate limit information to response headers
+        response = await call_next(request)
+        response.headers["X-RateLimit-Remaining"] = str(int(remaining_tokens))
+
+        return response

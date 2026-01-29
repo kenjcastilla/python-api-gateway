@@ -13,14 +13,14 @@ async def test_debug_routing():
     print(f"find_upstream('/hello') = ({upstream}, {suffix})")
 
     assert len(settings.routes) > 0, "No routes configured!"
-    assert upstream == "http://upstream", f"Expected 'http://upstream', got {upstream}"
+    assert upstream == "http://upstream", f"Expected 'http://upstream', got '{upstream}'"
 
 
 async def test_proxy_forwards_get_request(gateway_client: AsyncClient):
     resp = await gateway_client.get("/hello")
 
     assert resp.status_code == 200
-    assert dict(resp.json())['message'] == "hello from upstream"
+    assert dict(resp.json())["message"] == "hello from upstream"
 
 
 async def test_proxy_forwards_post_body(gateway_client: AsyncClient):

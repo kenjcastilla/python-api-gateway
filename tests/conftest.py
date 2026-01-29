@@ -12,24 +12,24 @@ from gateway.main import application as gateway_app
 
 
 #----Routes overrides for tests----
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def set_routes():
     settings.routes = [
-        RouteRule(prefix='/hello', upstream='http://upstream'),
-        RouteRule(prefix='/echo', upstream='http://upstream'),
+        RouteRule(prefix="/hello", upstream="http://upstream"),
+        RouteRule(prefix="/echo", upstream="http://upstream"),
     ]
 
 
 @pytest.fixture
 async def redis_client():
     """Real Redis client for integration testing"""
-    redis = Redis.from_url('redis://localhost:6379', decode_responses=True)
+    redis = Redis.from_url("redis://localhost:6379", decode_responses=True)
 
     # Verify Redis is running
     try:
         await redis.ping()
     except Exception as e:
-        pytest.skip('Redis not available', e)
+        pytest.skip("Redis not available", e)
 
     yield redis
 
