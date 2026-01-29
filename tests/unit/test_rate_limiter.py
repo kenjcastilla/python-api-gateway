@@ -1,4 +1,3 @@
-import pytest
 from gateway.testing.fake_limiter import FakeRateLimiter
 
 

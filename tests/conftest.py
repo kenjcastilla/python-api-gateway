@@ -1,8 +1,7 @@
 # Centralized pytest configuration file (fixtures, hooks, plugins, etc.)
-
 import pytest
 from asgi_lifespan import LifespanManager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from httpx import AsyncClient, ASGITransport
 
 from gateway.testing.fake_limiter import FakeRateLimiter
@@ -23,8 +22,11 @@ def upstream_app() -> FastAPI:
     app = FastAPI()     # mock upstream app for tests
 
     @app.get("/")
-    async def hello():  # tests path+method forwarding and response body
-        return { "message": "hello from upstream" }
+    async def hello(request: Request):  # tests path+method forwarding and response body
+        return {
+            "message": "hello from upstream",
+            "received_headers": dict(request.headers),
+        }
 
     @app.post("/")
     async def echo(payload: dict): # tests body forwarding and proxy correctness
@@ -36,19 +38,19 @@ def upstream_app() -> FastAPI:
 @pytest.fixture
 async def gateway_client(upstream_app: FastAPI):
     """Gateway test client with upstream mocked via ASGITransport"""
-
-    # transport from gateway to fake upstream
+    # Transport to fake upstream
     upstream_transport = ASGITransport(app=upstream_app)
     upstream_client = AsyncClient(
         transport=upstream_transport,
         base_url="http://upstream"
     )
-    # Need lifespan management to handle async testing
+    # Lifespan management to handle async testing with gateway.main app
     async with LifespanManager(gateway_app) as manager:
         # Change state variables associated with real gateway app to tests variables
         gateway_app.state.limiter = FakeRateLimiter()
         gateway_app.state.http_client = upstream_client
 
+        # client with transport to gateway app
         gateway_transport = ASGITransport(app=gateway_app)
         async with AsyncClient(
                 transport=gateway_transport,
