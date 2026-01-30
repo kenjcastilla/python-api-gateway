@@ -9,7 +9,7 @@ async def test_redis_connection(redis_client):
 
 
 async def test_rate_limiter_allows_within_capacity(rate_limiter):
-    """Test that rate limiter allows requests when tokens are within capacity"""
+    """Test: rate limiter allows requests when tokens are within capacity"""
     key = 'test:user:123'
     capacity = 10
     rate = 1.0  # 1 token/sec
@@ -22,7 +22,7 @@ async def test_rate_limiter_allows_within_capacity(rate_limiter):
 
 
 async def test_rate_limiter_blocks_over_capacity(rate_limiter):
-    """Test that rate limiter blocks request when tokens are over capacity"""
+    """Test: rate limiter blocks request when tokens are over capacity"""
     key = 'test:user:123'
     capacity = 3
     rate = 1.0
@@ -40,7 +40,7 @@ async def test_rate_limiter_blocks_over_capacity(rate_limiter):
 
 
 async def test_rate_limiter_refills_over_time(rate_limiter):
-    """Test that rate limiter refills over time at the specified rate"""
+    """Test: rate limiter refills over time at the specified rate"""
     key = 'test:user:123'
     capacity = 10
     rate = 10.0

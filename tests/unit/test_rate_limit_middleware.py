@@ -1,5 +1,5 @@
 async def test_middleware_returns_429_when_rate_limit_exceeded(gateway_client):
-    """Test that rate limit middleware blocks request when rate limit is exceeded."""
+    """Test: rate limit middleware blocks request when rate limit is exceeded."""
     gateway_app_from_client = gateway_client._transport.app
 
     # Simulate rate limiter blocking the request
@@ -11,7 +11,7 @@ async def test_middleware_returns_429_when_rate_limit_exceeded(gateway_client):
 
 
 async def test_middleware_allows_request_when_within_rate_limit(gateway_client):
-    """Test that rate limit middleware allows request when rate limit is not exceeded."""
+    """Test: rate limit middleware allows request when rate limit is not exceeded."""
     gateway_app_from_client = gateway_client._transport.app
 
     # Simulate rate limiter allowing request
