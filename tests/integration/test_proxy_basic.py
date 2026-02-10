@@ -8,7 +8,6 @@ async def test_debug_routing():
     from gateway.routing import find_upstream
 
     print(f"\nRoutes in settings: {settings.routes}")
-    print(f"Number of routes: {len(settings.routes)}")
 
     upstream, suffix = find_upstream("/hello")
     print(f"find_upstream('/hello') = ({upstream}, {suffix})")

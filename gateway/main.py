@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, HTTPException
 import httpx
+from os import getenv
 from redis.asyncio import Redis
 from .rate_limit import RateLimiter
 from .routing import find_upstream
@@ -11,7 +12,7 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown logic."""
     #---- Startup ----
     if not hasattr(app.state, 'limiter'):
-        redis = Redis.from_url("redis://localhost:6379")
+        redis = Redis.from_url(getenv("REDIS_URL", "redis://localhost:6379"))
         print('Redis ping successful:', await redis.ping())
 
         limiter = RateLimiter(redis)

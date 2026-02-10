@@ -1,11 +1,9 @@
-# syntax=docker/dockerfile:1
-
 # Comments are provided throughout this file to help you get started.
 # If you need more help, visit the Dockerfile reference guide at
 # https://docs.docker.com/engine/reference/builder/
 
-ARG PYTHON_VERSION=3.10
-FROM python:${PYTHON_VERSION}-slim as base
+# ARG PYTHON_VERSION=3.10
+FROM python:3.10-slim as base
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -46,4 +44,4 @@ COPY . .
 EXPOSE 8000
 
 # Run the application.
-CMD uvicorn gateway.main:app --reload
+CMD uvicorn gateway.main:application --reload
