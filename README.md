@@ -8,6 +8,6 @@ I recommend installing the dependencies listed in the requirements file.
 Run ```pip install -r requirements.txt``` or your package manager equivalent (I used uv, 
 so it'd be ```uv add -r requirements.txt```) from the root directory to install.
 
-For more dependency info, see [requirements.txt](requirements.txt) and [pyproject.toml project.dependencies](pyproject.toml)
+For more dependency info, see [requirements.txt](requirements.txt) and [pyproject.toml (\[project\] dependencies)](pyproject.toml).
 ### Testing
 To run the tests, run pytest from the root directory. 

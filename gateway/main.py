@@ -86,14 +86,6 @@ async def proxy(path: str, request: Request):
 
     body = await request.body()
 
-    # ---- Rate Limiting ----
-    # api_key = request.headers.get('x-api-key') or request.client.host
-    # key = f"rl:{api_key}:global"
-    #
-    # allowed, _ = await request.app.state.limiter.allow(key, capacity=50, rate=1.0)
-    # if not allowed:
-    #     raise HTTPException(status_code=429, detail="Rate limit exceeded")
-
     # ---- Proxy Request ----
     try:
         resp = await request.app.state.http_client.request(
